@@ -12,6 +12,15 @@ const auth = JSON.parse(JSON.stringify(config));
 const rec_cmds = ["rec", "recommend", "consider", "watch", "add"];
 const del_cmds = ["del", "delete", "remove", "rem", "trash", "watched", "done"];
 
+const emoji_map_rating = [
+    {"1️⃣":1}, {"2️⃣":2}, {"3️⃣":3}, {"4️⃣":4}, {"5️⃣":5},
+    {"6️⃣":6}, {"7️⃣":7}, {"8️⃣":8}, {"9️⃣":9}, {"🔟":10}
+];
+
+const emoji_map_rec =[
+    {"👍":1}, {"👎":-1}
+]
+
 client.once('ready', () => {
 	console.log('Ready!');
 });
@@ -39,7 +48,13 @@ db.collection('movies').get().then((snapshot) => {
     })
 });
 
+client.on('messageReactionAdd', (reaction, user) => {
+    console.log('a reaction ' + reaction.emoji.name + ' has been added to ' + reaction.message.content);
+});
 
+client.on('messageReactionRemove', (reaction, user) => {
+    console.log('a reaction ' + reaction.emoji.name + ' has been deleted from ' + reaction.message.content)
+})
 
 client.on('message', message => {
 
@@ -59,10 +74,10 @@ client.on('message', message => {
     if(message.content === '!live'){
         message.channel.send('Im alive!');
     }
-    else if(rec_cmds.includes(cmd)){
+    else if(rec_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
         message.channel.send('Your recommendation of "' + recommendation + '" has been saved.');
     }
-    else if(del_cmds.includes(cmd)){
+    else if(del_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
         message.channel.send('You have deleted "' + recommendation + '".');
     }
     else{
