@@ -12,6 +12,7 @@ const auth = JSON.parse(JSON.stringify(config));
 
 const rec_cmds = ["rec", "recommend", "consider", "watch", "add"];
 const del_cmds = ["del", "delete", "remove", "rem", "trash", "watched", "done"];
+const give_cmds = ["movie", "film", "horror"];
 
 const emoji_map_rating = new Map().set("1️⃣", 1).set("2️⃣", 2).set("3️⃣", 3).set("4️⃣", 4).set("5️⃣", 5)
                                   .set("6️⃣", 6).set("7️⃣", 7).set("8️⃣", 8).set("9️⃣", 9).set("🔟",10);
@@ -49,7 +50,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
     var flag;
 
-    if(keys_nums.includes(reaction.emoji.name)) {
+    if(keys_nums.includes(reaction.emoji.name)){
         flag = 0;
     } else if (keys_thumbs.includes(reaction.emoji.name)){
         flag = 1;
@@ -72,26 +73,64 @@ client.on('messageReactionAdd', async (reaction, user) => {
         console.log("No such document.");
     }
 
-    if(flag == 0) {
+    if(flag == 0){ // the emoji is a number
         var rating = movie.data().rating;
         var total = movie.data().total;
 
-        rating = rating + (( emoji_map_rating.get(reaction.emoji.name) - rating ) / (total + 1))
+        const movie_ref = db.collection('movies').doc(recommendation).collection('ratings').doc(user.username);
+        const docu_check = await movie_ref.get();
 
-        const res = await db.collection('movies').doc(recommendation).update({
-            rating: rating,
-            total: total + 1
-        });
-    } else {
+        db.collection('movies').doc(recommendation).get().then(async function(doc) { 
+            if(docu_check.exists) { // the user has previously voted
+
+                var prev_emoji = docu_check.data().emoji;
+
+                const previous_num = parseInt(emoji_map_rating.get(reaction.emoji.name));
+                
+                if(total > 1){
+                    rating = (((rating * total) - previous_num) / (total - 1));
+                }
+
+                reaction.message.reactions.cache.get(prev_emoji).users.remove(user);
+
+                const res = await db.collection('movies').doc(recommendation).collection('ratings').doc(user.username).update({
+                    emoji: reaction.emoji.name,
+                });
+
+                if(total > 1){
+                    rating = (((rating * total) + previous_num) / (total + 1));
+                }
+
+                const res_ = await db.collection('movies').doc(recommendation).update({
+                    rating: rating
+                });
+
+            } else { // the user hasn't previously voted, simply create a subcollection
+
+                rating = ((rating * total) + emoji_map_rating.get(reaction.emoji.name)) / (total + 1)
+
+                const res = await db.collection('movies').doc(recommendation).collection('ratings').doc(user.username).set({
+                    emoji: reaction.emoji.name,
+                });
+                const res_ = await db.collection('movies').doc(recommendation).update({
+                    total: total + 1,
+                    rating: rating
+                })
+            }
+        })
+        
+    } else { //TODO check if a user already voted and if they have change their vote
         var votes = movie.data().votes;
         votes += emoji_map_rec.get(reaction.emoji.name);
-        const res = await db.collection('movies').doc(recommendation).update({votes});
+        const res = await doc.update({votes});
     }
 
     console.log('a reaction ' + reaction.emoji.name + ' has been added to ' + recommendation);
 }});
 
 client.on('messageReactionRemove', (reaction, user) => {
+    // TODO if a user removes a reaction then remove their vote from the total tally
+    // TODO I can do that by moving the calculation from the on('messageReactionAdd') method
     console.log('a reaction ' + reaction.emoji.name + ' has been deleted from ' + reaction.message.content);
 });
 
@@ -109,40 +148,40 @@ client.on('message', async message => {
 
         console.log(message.author.username);
 
-
+    // TODO display all movie
+    // TODO display a movie's stats
     if(message.content === '!live'){
 
         message.channel.send('Im alive!');
-    }
-    else if(message.content === '!pingdb'){
+    } else if(message.content === '!pingdb'){
 
         db.collection('movies').get().then((snapshot) => {
             snapshot.docs.forEach(doc => {
                 console.log(doc.data());
             })
         });
-    }
-    else if(rec_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
+    } else if(rec_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
 
         const data = {
             title: recommendation,
             rating: 0,
             total: 0,
             recommender: message.author.username,
-            votes: 0
+            votes: 0,
         };
-
+        // TODO that movie has already been watched, that movie is already in the database
         const res = await db.collection('movies').doc(recommendation).set(data);
 
         message.channel.send('Your recommendation of "' + recommendation + '" has been saved.');
-    }
-    else if(del_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
-
+    } else if(del_cmds.includes(cmd) && recommendation != "" && recommendation != " "){
+        // TODO the movie has been deleted or not deleted or that movie DNE
         const res = await db.collection('movies').doc(recommendation).delete();
 
         message.channel.send('You have deleted "' + recommendation + '".');
-    }
-    else{
+    } else if(give_cmds.includes(cmd)){
+        // TODO pick a movie 
+    } else{
         message.channel.send('Idk what youre saying dude');
     }
 }});
+
