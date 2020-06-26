@@ -1,11 +1,29 @@
 {
-    "name": "horror-therapy",
-    "version": "1.0.0",
-    "description": "helps Max get over his fear of horror movies",
-    "main": "bot.js",
-    "authot": "Maksymilian Podraza",
-    "dependencies": {
-        "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-        "winston": "^3.2.1"
-    }
+  "name": "horror-therapy",
+  "version": "1.0.0",
+  "description": "helps Max get over his fear of horror movies",
+  "main": "firebase.html",
+  "authot": "Maksymilian Podraza",
+  "dependencies": {
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "discord.js": "^12.2.0",
+    "firebase": "^7.15.4",
+    "node-emoji": "^1.10.0",
+    "save": "^2.4.0",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/podrazque/horror-therapy-bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/podrazque/horror-therapy-bot/issues"
+  },
+  "homepage": "https://github.com/podrazque/horror-therapy-bot#readme"
 }
